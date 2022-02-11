@@ -59,6 +59,10 @@ register_phys_mem(MEM_AREA_IO_SEC,
 		  AHBC_BASE,
 		  SMALL_PAGE_SIZE);
 
+register_phys_mem(MEM_AREA_IO_NSEC,
+		  SCU_BASE,
+		  SMALL_PAGE_SIZE);
+
 #define AHBC_REG_WR_PROT	0x204
 #define AHBC_TZM_ST(i)		(0x300 + ((i) * 0x10))
 #define AHBC_TZM_ED(i)		(0x304 + ((i) * 0x10))
