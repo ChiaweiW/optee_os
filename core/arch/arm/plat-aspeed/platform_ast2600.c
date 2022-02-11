@@ -3,6 +3,7 @@
  * Copyright (c) 2021, Aspeed Technology Inc.
  */
 
+#include <config.h>
 #include <console.h>
 #include <drivers/gic.h>
 #include <drivers/serial8250_uart.h>
@@ -64,6 +65,7 @@ register_phys_mem(MEM_AREA_IO_NSEC,
 		  SMALL_PAGE_SIZE);
 
 #define AHBC_REG_WR_PROT	0x204
+#define AHBC_TZP_ACCESS1	0x280
 #define AHBC_TZM_ST(i)		(0x300 + ((i) * 0x10))
 #define AHBC_TZM_ED(i)		(0x304 + ((i) * 0x10))
 #define AHBC_TZM_PERM(i)	(0x308 + ((i) * 0x10))
@@ -108,6 +110,7 @@ void console_init(void)
 
 void plat_primary_init_early(void)
 {
+	uint32_t tzm_perm;
 	vaddr_t ahbc_virt = 0;
 
 	ahbc_virt = core_mmu_get_va(AHBC_BASE,
@@ -115,8 +118,14 @@ void plat_primary_init_early(void)
 	if (!ahbc_virt)
 		panic();
 
-	io_write32(ahbc_virt + AHBC_TZM_PERM(0),
-		   BIT(TZM_PERM_CPU_RW));
+	tzm_perm = BIT(TZM_PERM_CPU_RW);
+
+	if (IS_ENABLED(CFG_ASPEED_CRYPTO_DRIVER)) {
+		tzm_perm |= BIT(TZM_PERM_ENCRYPT_RW);
+		io_write32(ahbc_virt + AHBC_TZP_ACCESS1, BIT(20));
+	}
+
+	io_write32(ahbc_virt + AHBC_TZM_PERM(0), tzm_perm);
 	io_write32(ahbc_virt + AHBC_TZM_ED(0),
 		   CFG_TZDRAM_START + CFG_TZDRAM_SIZE - 1);
 	io_write32(ahbc_virt + AHBC_TZM_ST(0),
